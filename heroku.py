@@ -5,7 +5,7 @@ import random
 
 bot_token = '7801446284:AAEVqjQPWl6a0NXXCAGdfl6Mw-Fg0PXmB8U'
 owner_id = 6663845789
-user_ids = [6663845789,]
+user_ids = [6663845789,6698364560]
 use_proxy = False
 proxies = []
 
