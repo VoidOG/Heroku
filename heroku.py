@@ -3,14 +3,12 @@ from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageH
 import requests
 import random
 
-# Global Variables
 bot_token = '7801446284:AAEVqjQPWl6a0NXXCAGdfl6Mw-Fg0PXmB8U'
 owner_id = 6663845789
-user_ids = []  # List to store multiple user IDs
+user_ids = [6663845789,]
 use_proxy = False
 proxies = []
 
-# Helper function to toggle proxy
 def toggle_proxy():
     global use_proxy, proxies
     if use_proxy:
@@ -18,12 +16,10 @@ def toggle_proxy():
         proxies = []
         return "Proxy disabled."
     else:
-        # You can implement proxy file input through the bot here if needed
         proxies = ["your_proxies_here"]
         use_proxy = True
         return "Proxy enabled."
 
-# Helper function to parse proxy
 def parse_proxy(proxy):
     parts = proxy.split(':')
     if len(parts) == 4:
@@ -34,8 +30,7 @@ def parse_proxy(proxy):
         }
     else:
         return None
-
-# Check card function
+        
 def check_card(card_details, heroku_auth_key):
     try:
         cc, month, year, cvc = card_details.split('|')
@@ -107,7 +102,6 @@ def check_card(card_details, heroku_auth_key):
     except Exception as e:
         return f"Card check failed: {str(e)}"
 
-# Start command handler
 def start(update: Update, context: CallbackContext):
     keyboard = [
         [
@@ -118,7 +112,6 @@ def start(update: Update, context: CallbackContext):
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.message.reply_text('CC Checker Bot by Alcyone for Heroku and Stripe', reply_markup=reply_markup)
 
-# Callback query handler
 def button(update: Update, context: CallbackContext):
     query = update.callback_query
     query.answer()
@@ -134,7 +127,6 @@ def button(update: Update, context: CallbackContext):
         else:
             context.bot.send_message(chat_id=query.message.chat_id, text="You are not authorized to add users.")
 
-# Add user handler (Owner only)
 def process_add_user(update: Update, context: CallbackContext):
     if context.user_data.get('awaiting_user_id'):
         user_id = update.message.text
@@ -145,7 +137,6 @@ def process_add_user(update: Update, context: CallbackContext):
             update.message.reply_text(f"User ID {user_id} is already in the list.")
         context.user_data['awaiting_user_id'] = False
 
-# Command to check card
 def check_card_command(update: Update, context: CallbackContext):
     update.message.reply_text("Please send card details in format: CC|MM|YY|CVC")
     context.user_data['awaiting_card_details'] = True
